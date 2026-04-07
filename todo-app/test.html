@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TodoApp Unit Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        
+        .test-suite {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-case {
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #ddd;
+            background: #fafafa;
+        }
+        
+        .test-case.pass {
+            border-left-color: #4CAF50;
+            background: #f1f8f4;
+        }
+        
+        .test-case.fail {
+            border-left-color: #f44336;
+            background: #fef1f0;
+        }
+        
+        .test-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .test-result {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .test-result.pass {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .test-result.fail {
+            background: #f44336;
+            color: white;
+        }
+        
+        .test-description {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .test-details {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #444;
+            margin-top: 8px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        
+        .error-message {
+            color: #d32f2f;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        
+        .summary {
+            background: #2196F3;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 TodoApp Unit Tests</h1>
+    
+    <div id="summary" class="summary">
+        <div>Running tests...</div>
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <!-- Hidden DOM elements for testing -->
+    <div style="display: none;">
+        <input type="text" id="todoInput">
+        <button id="addBtn">Add</button>
+        <ul id="todoList"></ul>
+        <span id="totalCount">Total: 0</span>
+        <span id="completedCount">Completed: 0</span>
+    </div>
+    
+    <script src="app.js"></script>
+    <script>
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+            
+            test(name, description, testFn) {
+                this.tests.push({ name, description, testFn });
+            }
+            
+            async run() {
+                for (const test of this.tests) {
+                    try {
+                        await test.testFn();
+                        this.results.push({
+                            name: test.name,
+                            description: test.description,
+                            passed: true,
+                            details: null
+                        });
+                    } catch (error) {
+                        this.results.push({
+                            name: test.name,
+                            description: test.description,
+                            passed: false,
+                            details: error.message
+                        });
+                    }
+                }
+                
+                this.displayResults();
+            }
+            
+            displayResults() {
+                const passed = this.results.filter(r => r.passed).length;
+                const failed = this.results.filter(r => !r.passed).length;
+                const total = this.results.length;
+                
+                // Update summary
+                const summaryDiv = document.getElementById('summary');
+                summaryDiv.innerHTML = `
+                    <div>Test Results</div>
+                    <div class="summary-stats">
+                        <div class="stat">
+                            <div class="stat-number">${total}</div>
+                            <div class="stat-label">Total Tests</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">${passed}</div>
+                            <div class="stat-label">Passed</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">${failed}</div>
+                            <div class="stat-label">Failed</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Display individual test results
+                const resultsDiv = document.getElementById('test-results');
+                resultsDiv.innerHTML = '<div class="test-suite"><h2>Test Cases</h2></div>';
+                const suiteDiv = resultsDiv.querySelector('.test-suite');
+                
+                this.results.forEach((result, index) => {
+                    const testDiv = document.createElement('div');
+                    testDiv.className = `test-case ${result.passed ? 'pass' : 'fail'}`;
+                    
+                    testDiv.innerHTML = `
+                        <div class="test-name">
+                            Test ${index + 1}: ${result.name}
+                            <span class="test-result ${result.passed ? 'pass' : 'fail'}">
+                                ${result.passed ? '✓ PASS' : '✗ FAIL'}
+                            </span>
+                        </div>
+                        <div class="test-description">${result.description}</div>
+                        ${result.details ? `
+                            <div class="test-details">
+                                <div class="error-message">Error: ${result.details}</div>
+                            </div>
+                        ` : ''}
+                    `;
+                    
+                    suiteDiv.appendChild(testDiv);
+                });
+            }
+        }
+        
+        // Assertion helpers
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(message || `Expected ${expected}, but got ${actual}`);
+            }
+        }
+        
+        function assertTrue(condition, message) {
+            if (!condition) {
+                throw new Error(message || 'Expected condition to be true');
+            }
+        }
+        
+        function assertFalse(condition, message) {
+            if (condition) {
+                throw new Error(message || 'Expected condition to be false');
+            }
+        }
+        
+        // Run tests when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const runner = new TestRunner();
+            
+            // Test 1: Adding a todo
+            runner.test(
+                'Add Todo',
+                'Should successfully add a new todo to the list',
+                () => {
+                    const app = new TodoApp();
+                    app.init();
+                    
+                    // Add a todo
+                    app.addTodo('Buy groceries');
+                    
+                    // Verify todo was added
+                    assertEqual(app.todos.length, 1, 'Should have 1 todo');
+                    assertEqual(app.todos[0].text, 'Buy groceries', 'Todo text should match');
+                    assertEqual(app.todos[0].completed, false, 'New todo should not be completed');
+                    assertTrue(app.todos[0].id === 1, 'First todo should have id 1');
+                }
+            );
+            
+            // Test 2: Toggle todo completion
+            runner.test(
+                'Toggle Todo Completion',
+                'Should toggle a todo between completed and incomplete states',
+                () => {
+                    const app = new TodoApp();
+                    app.init();
+                    
+                    // Add a todo
+                    app.addTodo('Walk the dog');
+                    const todoId = app.todos[0].id;
+                    
+                    // Initially not completed
+                    assertFalse(app.todos[0].completed, 'Todo should start incomplete');
+                    
+                    // Toggle to completed
+                    app.toggleComplete(todoId);
+                    assertTrue(app.todos[0].completed, 'Todo should be completed after toggle');
+                    
+                    // Toggle back to incomplete
+                    app.toggleComplete(todoId);
+                    assertFalse(app.todos[0].completed, 'Todo should be incomplete after second toggle');
+                }
+            );
+            
+            // Test 3: Delete todo
+            runner.test(
+                'Delete Todo',
+                'Should remove a todo from the list by its ID',
+                () => {
+                    const app = new TodoApp();
+                    app.init();
+                    
+                    // Add multiple todos
+                    app.addTodo('First todo');
+                    app.addTodo('Second todo');
+                    app.addTodo('Third todo');
+                    
+                    assertEqual(app.todos.length, 3, 'Should have 3 todos');
+                    
+                    // Delete the middle todo (id: 2)
+                    app.deleteTodo(2);
+                    
+                    assertEqual(app.todos.length, 2, 'Should have 2 todos after deletion');
+                    assertEqual(app.todos[0].text, 'First todo', 'First todo should remain');
+                    assertEqual(app.todos[1].text, 'Third todo', 'Third todo should remain');
+                    
+                    // Verify the deleted todo is gone
+                    const deletedTodo = app.todos.find(t => t.id === 2);
+                    assertTrue(deletedTodo === undefined, 'Deleted todo should not exist');
+                }
+            );
+            
+            // Test 4: Unique ID generation
+            runner.test(
+                'Unique ID Generation',
+                'Should generate unique IDs even after deletions',
+                () => {
+                    const app = new TodoApp();
+                    app.init();
+                    
+                    // Add todos
+                    app.addTodo('Todo 1');
+                    app.addTodo('Todo 2');
+                    app.addTodo('Todo 3');
+                    
+                    // Delete middle todo
+                    app.deleteTodo(2);
+                    
+                    // Add new todo - should get id 4, not reuse id 2
+                    app.addTodo('Todo 4');
+                    
+                    const ids = app.todos.map(t => t.id);
+                    assertEqual(ids.length, 3, 'Should have 3 todos');
+                    assertTrue(ids.includes(1), 'Should have id 1');
+                    assertTrue(ids.includes(3), 'Should have id 3');
+                    assertTrue(ids.includes(4), 'Should have id 4');
+                    assertFalse(ids.includes(2), 'Should not reuse deleted id 2');
+                }
+            );
+            
+            // Test 5: Empty input validation
+            runner.test(
+                'Empty Input Validation',
+                'Should not add todos with empty or whitespace-only text',
+                () => {
+                    const app = new TodoApp();
+                    app.init();
+                    
+                    // Try to add empty string
+                    app.todoInput.value = '';
+                    app.handleAddTodo();
+                    assertEqual(app.todos.length, 0, 'Should not add empty todo');
+                    
+                    // Try to add whitespace only
+                    app.todoInput.value = '   ';
+                    app.handleAddTodo();
+                    assertEqual(app.todos.length, 0, 'Should not add whitespace-only todo');
+                    
+                    // Add valid todo
+                    app.todoInput.value = '  Valid todo  ';
+                    app.handleAddTodo();
+                    assertEqual(app.todos.length, 1, 'Should add valid todo');
+                    assertEqual(app.todos[0].text, 'Valid todo', 'Should trim whitespace from valid todo');
+                }
+            );
+            
+            // Run all tests
+            runner.run();
+        });
+    </script>
+</body>
+</html>
